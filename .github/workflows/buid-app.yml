@@ -1,0 +1,50 @@
+name: Build App
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment de ejecución"
+        required: false
+        default: "dev"
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build application
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Publish application
+        run: dotnet publish --configuration Release --output ./publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build
+          path: ./publish
+
+      - name: Print environment
+        if: env.ENVIRONMENT == 'dev'
+        run: |
+          echo "Environment seleccionado: $ENVIRONMENT"
